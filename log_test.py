@@ -114,7 +114,7 @@ for i in range(38, len(user_array), 38):
             MAX_DAY_LENGTH : max(len(ssub) for sub in sub_user for ssub in sub)})
         user_v = np.concatenate((user_v, uv))
     else:
-        sub_user = user_array[38001:38022]
+        sub_user = user_array[38000:38022]
         uv = sess.run(user_vec, feed_dict={
             input_x : sub_user,
             MAX_DAY_COUNT :  max(len(sub) for sub in sub_user),
