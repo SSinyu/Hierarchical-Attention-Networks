@@ -98,23 +98,24 @@ for i_15, day_15_lst in enumerate(total_user):
 #np.save(r'D:\USERLOG\select_user\total\user_array.npy', user_array)
 user_array = np.load(r'D:\USERLOG\select_user\total\user_array.npy')
 
-sub_user = user_array[0:38]
+split_size = 38
+sub_user = user_array[0:split_size]
 user_v = sess.run(user_vec, feed_dict={
     input_x : sub_user,
     MAX_DAY_COUNT : max(len(sub) for sub in sub_user),
     MAX_DAY_LENGTH : max(len(ssub) for sub in sub_user for ssub in sub)})
 
-for i in range(38, len(user_array), 38):
+for i in range(split_size, len(user_array), split_size):
     print("{}/{}".format(i, len(user_array)))
-    if i != 38000:
-        sub_user = user_array[i:i+38]
+    if i != split_size*1000:
+        sub_user = user_array[i:i+split_size]
         uv = sess.run(user_vec, feed_dict={
             input_x : sub_user,
             MAX_DAY_COUNT :  max(len(sub) for sub in sub_user),
             MAX_DAY_LENGTH : max(len(ssub) for sub in sub_user for ssub in sub)})
         user_v = np.concatenate((user_v, uv))
     else:
-        sub_user = user_array[38000:38022]
+        sub_user = user_array[split_size*1000:len(user_array)+1]
         uv = sess.run(user_vec, feed_dict={
             input_x : sub_user,
             MAX_DAY_COUNT :  max(len(sub) for sub in sub_user),
