@@ -65,7 +65,6 @@ select_day.to_pickle(r'D:\USERLOG\select_user\user04_dayselect_except27.pkl')
 
 
 
-
 import pickle
 import numpy as np
 import pandas as pd
@@ -401,6 +400,20 @@ user_vfin2.to_pickle(r"D:\USERLOG\select_user2\user10_vfin2.pkl")
 
 
 
+# TODO : remove day 3/19, 3/27, 4/4, 4/5 again (not processed to unknown reasons)
+data_path = r"D:\USERLOG\select_user2"
+data_lst = [data for data in os.listdir(data_path) if 'vfin2.pkl' in data]
+
+for data_set in data_lst:
+    sltd_mod = pickle.load(open(os.path.join(data_path, data_set), "rb"))
+
+    rm_list = [4, 5, 19, 27]
+    for rm_day in rm_list:
+        sltd_mod = sltd_mod[sltd_mod.day != rm_day]
+        print("{} delete {} ...".format(data_set[:6], rm_day))
+    sltd_mod.to_pickle(r"D:\USERLOG\select_user2\{}_vfin2_.pkl".format(data_set[:6]))
+
+
 
 
 
@@ -416,10 +429,8 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 import os
-from tqdm import tqdm
 
 pd.set_option('display.max_columns', 15)
-
 
 def bet_second_2(outtime, intime):
    sec = int(outtime.value) - int(intime.value)
@@ -433,24 +444,27 @@ def bet_second_2(outtime, intime):
 #         ... } (20 min ver.)
 
 data_path = r"D:\USERLOG\select_user2"
-data_lst = [data for data in os.listdir(data_path) if 'vfin2.pkl' in data]
+data_lst = [data for data in os.listdir(data_path) if 'vfin2_.pkl' in data]
 
 for data_ind in range(len(data_lst)):
     user_vfin = pickle.load(open(os.path.join(data_path, data_lst[data_ind]) ,"rb"))
     user_vfin = user_vfin.drop(["CH","OnOff_sess","day_tf"], axis=1)
 
+    # channel
+    viewing_dic = {}
+    # category
+    viewing_dic_cat = {}
+
     # each user
     user_unique = list(user_vfin["ID"].unique())
-    for user in user_unique:
+    for user_i, user in enumerate(user_unique):
+        print("User{} - {}/{}".format(data_ind+1, user_i, len(user_unique)))
         user_e = user_vfin[user_vfin.ID == user]
+        #print("User select")
         day_unique = [20,21,22,23,24,25,26,28,29,30,31,1,2,3]
         user_day_unique = list(user_e.day.unique())
 
-        # channel
-        viewing_dic = {}
         viewing_dic[user] = {}
-        # category
-        viewing_dic_cat = {}
         viewing_dic_cat[user] = {}
 
         for day_ind in day_unique:
@@ -462,6 +476,7 @@ for data_ind in range(len(data_lst)):
 
             elif day_ind in user_day_unique:
                 user_day_df = user_e[user_e.day == day_ind]
+                #print("Day select")
                 hour_ = [user_day_df.iloc[idx].InTime.hour for idx in range(len(user_day_df))]
                 user_day_df['hour'] = hour_
                 hour_unique = list(np.unique(hour_))
@@ -527,4 +542,106 @@ for data_ind in range(len(data_lst)):
 
                             day_list[hour] = hour_list_3
                 viewing_dic[user][day_ind] = day_list
+
+    with open(os.path.join(data_path, 'user03_dict.pkl'), 'wb') as f:
+        pickle.dump(viewing_dic, f)
+
+
+
+
+
+
+# output {user1: {day1:[ [,,], [,,] ... ],
+#                 day2:[ [,,], [,,] ... ] ... },
+#         user2: {day1:[ [,,], [,,] ... ],
+#                 day2:[ [,,], [,,] ... ] ... },
+#         ... } (20 min ver.)
+# TODO : channel to vector embedding
+# user1 [ , , , , ... ], user2 [ , , , , ... ], user3 [ , , , , ... ]
+import pickle
+import numpy as np
+import pandas as pd
+import os
+import logging
+from gensim.models import word2vec
+
+
+pd.set_option('display.max_columns', 15)
+
+data_path = r"D:\USERLOG\select_user2"
+data_lst = [data for data in os.listdir(data_path) if 'dict.pkl' in data]
+
+# unfold
+all_user_name = []
+all_user_lst_embed = []
+for data_set in data_lst:
+    with open(os.path.join(data_path, data_set), 'rb') as f:
+        user_dic = pickle.load(f)
+    print(data_set)
+
+    for name in list(user_dic.keys()):
+        all_user_name.append(name)
+
+    users_lst = []
+    for i, user in enumerate(list(user_dic.keys())):
+        users_ = []
+        for day in list(user_dic[user].keys()):
+            for log_3 in user_dic[user][day]:
+                for log in log_3:
+                    users_.append(log)
+        users_lst.append(users_)
+
+    for day_log in users_lst:
+        all_user_lst_embed.append(day_log)
+
+
+all_user_lst = []
+for user in all_user_lst_embed:
+    user_ = []
+    for i in range(len(user)):
+        if i % 72 == 0:
+            day_ = user[i:i+72]
+            user_.append(day_)
+    all_user_lst.append(user_)
+
+
+# vectorization (Word2Vec)
+MIN_SAMPLE = 0
+EMBEDDING_SIZE = 100
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+CH_vec = word2vec.Word2Vec(all_user_lst_embed, iter=5, min_count=MIN_SAMPLE, sg=1, size=EMBEDDING_SIZE)
+CH_embedding = np.zeros((len(CH_vec.wv.vocab), EMBEDDING_SIZE))
+for i in range(len(CH_vec.wv.vocab)):
+    embedding_vec = CH_vec.wv[CH_vec.wv.index2word[i]]
+    if embedding_vec is not None:
+        CH_embedding[i] = embedding_vec
+print('shape :', CH_embedding.shape, type(CH_embedding))
+# save
+data_path = r"D:\USERLOG\select_user2\total"
+np.save(os.path.join(data_path, 'user_iter5_{}dim.npy'.format(EMBEDDING_SIZE)), CH_embedding)
+with open(os.path.join(data_path, 'user_index2word_iter5_{}dim.pkl'.format(EMBEDDING_SIZE)), 'wb') as f:
+    pickle.dump(CH_vec.wv.index2word, f)
+# vocab
+keys = CH_vec.wv.index2word
+CH_vocab = {}
+for i, channel in enumerate(keys):
+    CH_vocab[channel] = i + 1
+CH_vocab['UNK'] = 0
+with open(os.path.join(data_path, 'channel_vocab_{}dim.pkl'.format(EMBEDDING_SIZE)), 'wb') as f:
+    pickle.dump(CH_vocab, f)
+
+
+
+
+
+
+# TODO : build dictionary data (key:user_name, value:viewing_log)
+data_path = r"D:\USERLOG\select_user2\total"
+
+tmp_user_dic = {}
+for key_, value_ in zip(all_user_name, all_user_lst):
+    tmp_user_dic[key_] = value_
+
+with open(os.path.join(data_path, 'tmp_user_dic.pkl'), 'wb') as f:
+    pickle.dump(tmp_user_dic, f)
 
