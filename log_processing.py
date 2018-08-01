@@ -454,7 +454,13 @@ for data_ind in range(len(data_lst)):
         viewing_dic_cat[user] = {}
 
         for day_ind in day_unique:
-            if day_ind in user_day_unique:
+            if day_ind not in user_day_unique:
+                not_day = []
+                for _ in range(0, 24):
+                    not_day.append(['Off','Off','Off'])
+                viewing_dic[user][day_ind] = not_day
+
+            elif day_ind in user_day_unique:
                 user_day_df = user_e[user_e.day == day_ind]
                 hour_ = [user_day_df.iloc[idx].InTime.hour for idx in range(len(user_day_df))]
                 user_day_df['hour'] = hour_
@@ -520,10 +526,5 @@ for data_ind in range(len(data_lst)):
                                     hour_list_3.append("Jap")
 
                             day_list[hour] = hour_list_3
-                    
-
-
-        viewing_dic[user_unique[0]][day_ind] = []
-        viewing_dic_cat[user_unique[0]][day_ind] = []
-
+                viewing_dic[user][day_ind] = day_list
 
