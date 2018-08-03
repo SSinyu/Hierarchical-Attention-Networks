@@ -418,134 +418,68 @@ for data_set in data_lst:
 
 
 
-# TODO : List generate (fixed size of day)
-# TODO : ver1. only category
-# TODO : ver2. only channel
-# TODO : ver3. channel example, category label
-# TODO : 10min, 20min, 30min for all
-
-import pickle
-import numpy as np
+# 20min
 import pandas as pd
-from collections import defaultdict
 import os
+import numpy as np
+import pickle
+import time
 
-pd.set_option('display.max_columns', 15)
+TSLOT_TIME_STR = '20min'
+TSLOT_TIME_NUM = 20
+FULL_SLOT_SEC = TSLOT_TIME_NUM * 60
+START_DATE = '2017-03-20'
+END_DATE = '2017-04-04'
+DAYS = (pd.to_datetime(END_DATE) - pd.to_datetime(START_DATE)).days
+NUM_TSLOT = 3 * 24 * DAYS
 
-def bet_second_2(outtime, intime):
-   sec = int(outtime.value) - int(intime.value)
-   sec_ = sec / 1000000000
-   return int(sec_)
-
-# output {user1: {day1:[ [,,], [,,] ... ],
-#                 day2:[ [,,], [,,] ... ] ... },
-#         user2: {day1:[ [,,], [,,] ... ],
-#                 day2:[ [,,], [,,] ... ] ... },
-#         ... } (20 min ver.)
+start_dt = pd.to_datetime(START_DATE)
+end_dt = pd.to_datetime(END_DATE)
+tslot_delta = pd.Timedelta(TSLOT_TIME_STR)
+onesec = pd.Timedelta('1s')
 
 data_path = r"D:\USERLOG\select_user2"
-data_lst = [data for data in os.listdir(data_path) if 'vfin2_.pkl' in data]
+data_dir = [data for data in os.listdir(data_path) if 'prof' in data]
 
-for data_ind in range(len(data_lst)):
-    user_vfin = pickle.load(open(os.path.join(data_path, data_lst[data_ind]) ,"rb"))
-    user_vfin = user_vfin.drop(["CH","OnOff_sess","day_tf"], axis=1)
+prof_ = pickle.load(open(os.path.join(data_path, data_dir[2]), "rb"))
+prof_ = prof_[(prof_['OutTime'] >= start_dt) & (prof_["InTime"] < end_dt)]
+CH_list = np.unique(prof_['CH'])
 
-    # channel
-    viewing_dic = {}
-    # category
-    viewing_dic_cat = {}
+total_user_len = len(prof_.groupby('ID'))
+user_set = {}
+for i, (u, log) in enumerate(prof_.groupby('ID')):
+    tframe = pd.DataFrame(index=np.arange(NUM_TSLOT), columns=CH_list)
+    tframe = tframe.fillna(0)
+    for tin, tout, ch in log[['InTime', 'OutTime', 'CH']].values:
+        tin, tout = max(tin, start_dt), min(tout, end_dt)
+        start_t = tin.ceil(freq=TSLOT_TIME_STR)
+        start_t += ((start_t == tin) * 1) * tslot_delta
+        end_t = tout.floor(freq=TSLOT_TIME_STR)
+        end_t -= ((end_t == tout) * 1) * tslot_delta
+        num_slot = (end_t - start_t) // tslot_delta + 2
+        start_slot = (start_t - start_dt) // tslot_delta - 1
+        if num_slot > 1:
+            tframe.loc[np.arange(start=start_slot, stop=start_slot + num_slot, dtype='int'), ch] += np.concatenate(
+                ([(start_t - tin) / onesec], np.ones(num_slot - 2) * FULL_SLOT_SEC if num_slot > 2 else [], [(tout - end_t) / onesec]))
+        else:
+            tframe.loc[start_slot, ch] += (tout - tin) / onesec
 
-    # each user
-    user_unique = list(user_vfin["ID"].unique())
-    for user_i, user in enumerate(user_unique):
-        print("User{} - {}/{}".format(data_ind+1, user_i, len(user_unique)))
-        user_e = user_vfin[user_vfin.ID == user]
-        #print("User select")
-        day_unique = [20,21,22,23,24,25,26,28,29,30,31,1,2,3]
-        user_day_unique = list(user_e.day.unique())
+    viewing = []
+    non_zeros = list(tframe.sum(1).nonzero()[0])
+    for idx in range(len(tframe)):
+        if idx in non_zeros:
+            if tframe.iloc[idx].max() >= (1200/2):
+                viewing.append(tframe.iloc[idx].idxmax())
+            else:
+                viewing.append("Jap")
+        else:
+            viewing.append("Off")
+    user_set[u] = viewing
 
-        viewing_dic[user] = {}
-        viewing_dic_cat[user] = {}
+    print("{} - {}/{}".format(data_dir[2][:6], i+1, total_user_len))
 
-        for day_ind in day_unique:
-            if day_ind not in user_day_unique:
-                not_day = []
-                for _ in range(0, 24):
-                    not_day.append(['Off','Off','Off'])
-                viewing_dic[user][day_ind] = not_day
-
-            elif day_ind in user_day_unique:
-                user_day_df = user_e[user_e.day == day_ind]
-                #print("Day select")
-                hour_ = [user_day_df.iloc[idx].InTime.hour for idx in range(len(user_day_df))]
-                user_day_df['hour'] = hour_
-                hour_unique = list(np.unique(hour_))
-
-                day_list = []
-                for time_ind in range(0, 24):
-                    day_list.append([])
-
-                off_time = list(set(range(0, 24)) - set(hour_unique))
-                for hour in range(0, 24):
-                    if hour in off_time:
-                        day_list[hour] = ["Off", "Off", "Off"]
-                    else:
-                        for on_ind in hour_unique:
-                            # select t hour
-                            user_hour_df = user_day_df[user_day_df.hour == on_ind]
-
-                            month = user_hour_df.iloc[0].InTime.month
-                            hour = user_hour_df.iloc[0].InTime.hour
-                            start_InTime = pd.Timestamp(2017, month, day_ind, on_ind, 0, 0)
-                            end_OutTime = pd.Timestamp(2017, month, day_ind, on_ind, 59, 59)
-                            start_iter = bet_second_2(user_hour_df.iloc[0].InTime, start_InTime)
-                            end_iter = bet_second_2(end_OutTime, user_hour_df.iloc[len(user_hour_df) - 1].OutTime)
-
-                            hour_list = []
-                            for _ in range(start_iter):
-                                hour_list.append("Off")
-                            for i in range(len(user_hour_df)):
-                                bets = user_hour_df.iloc[i].bets
-                                CH = user_hour_df.iloc[i].CH_match
-                                if i < len(user_hour_df) - 1:
-                                    continue_tf = bet_second_2(user_hour_df.iloc[i].OutTime,
-                                                               user_hour_df.iloc[i + 1].InTime)
-                                if continue_tf != 0:
-                                    for _ in range(bets):
-                                        hour_list.append(CH)
-                                    for _ in range(continue_tf):
-                                        hour_list.append("Off")
-                                else:
-                                    for _ in range(bets):
-                                        hour_list.append(CH)
-                            if end_iter != 0:
-                                for _ in range(end_iter):
-                                    hour_list.append("Off")
-
-                            split_i = len(hour_list) // 3
-                            p1 = hour_list[:split_i]
-                            p2 = hour_list[(split_i):(split_i * 2)]
-                            p3 = hour_list[(split_i * 2):]
-
-                            hour_list_3 = []
-                            for p in [p1, p2, p3]:
-                                p_count = {}
-                                for inst in p:
-                                    try: p_count[inst] += 1
-                                    except: p_count[inst] = 1
-
-                                ch_1st = sorted(p_count.items(), key=lambda k: k[1])[-1]
-                                if (ch_1st[1] / split_i) >= 0.5:
-                                    hour_list_3.append(ch_1st[0])
-                                else:
-                                    hour_list_3.append("Jap")
-
-                            day_list[hour] = hour_list_3
-                viewing_dic[user][day_ind] = day_list
-
-    with open(os.path.join(data_path, 'user03_dict.pkl'), 'wb') as f:
-        pickle.dump(viewing_dic, f)
-
+with open(os.path.join(data_path, 'user{}_dict.pkl'.format(data_dir[2][4:6])), 'wb') as f:
+    pickle.dump(user_set, f)
 
 
 
