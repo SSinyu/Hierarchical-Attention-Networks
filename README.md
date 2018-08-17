@@ -1,4 +1,4 @@
-TV_LOG
+tv log modeling using HAN.
 ======
 
 <img src="https://github.com/SSinyu/TVLOG/blob/master/img/model_architecture.jpg" width="450"/> 
