@@ -13,8 +13,8 @@ class AttentionLayer(nn.Module):
         self.softmax_ = nn.Softmax(dim=1)
 
     def forward(self, x):
-        u_context = torch.nn.Parameter(torch.FloatTensor(self.hidden_size).normal_(0, 0.01))
-        h = self.tanh_(self.linear_(x))
+        u_context = torch.nn.Parameter(torch.FloatTensor(self.hidden_size).normal_(0, 0.01)).cuda()
+        h = self.tanh_(self.linear_(x)).cuda()
         alpha = self.softmax_(torch.mul(h, u_context).sum(dim=2, keepdim=True))  # (x_dim0, x_dim1, 1)
         attention_output = torch.mul(x, alpha).sum(dim=1)  # (x_dim0, x_dim2)
         return attention_output, alpha
