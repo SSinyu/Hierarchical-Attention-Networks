@@ -126,6 +126,7 @@ class Solver(object):
     def test(self):
         del self.HAN
         self.HAN = HierarchicalAttentionNet(vocab_size=self.vocab_size, hidden_size=self.hidden_size, n_classes=self.n_classes)
+        self.HAN.to(self.device)
         self.load_model(self.test_iters)
 
         # accuracy
@@ -139,14 +140,14 @@ class Solver(object):
 
                 total += y.size(0)
                 correct += (pred == y.view(-1)).sum().item()
-                print('Accuracy of the network on the test data: {}%'.format(100 * correct / total))
+        print('Accuracy of the network on the test data: {}%'.format(100 * correct / total))
 
         # figure
         import matplotlib.pyplot as plt
         import seaborn as sns
         div = 10
-        train_loss = np.load(self.save_path + 'train_loss_{}_iter.npy'.format(self.test_iters))
-        eval_loss = np.load(self.save_path + 'eval_loss_{}_iter.npy'.format(self.test_iters))
+        train_loss = np.load(os.path.join(self.save_path, 'train_loss_{}_iter.npy'.format(self.test_iters)))
+        eval_loss = np.load(os.path.join(self.save_path, 'eval_loss_{}_iter.npy'.format(self.test_iters)))
 
         fig, ax = plt.subplots(2,1,figsize=(14,10))
         sns.lineplot(range(len(train_loss)//div), [train_loss[i] for i in range(len(train_loss)) if i % div == 0], ax=ax[0])
