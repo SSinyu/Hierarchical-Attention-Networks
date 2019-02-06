@@ -69,12 +69,16 @@ class HierarchicalAttentionNet(nn.Module):
         word_encode, _ = pad_packed_sequence(word_packed_output, batch_first=True) # (non_zero_idx, max_sent_len, hidden_size*2)
 
         # merge sent_length=0 part
+        if word_encode.shape[1] != word_embed.shape[1]:
+            word_encode_dim = word_encode.shape[1]
+            word_embed_remain = word_embed_remain[:, :word_encode_dim, :]
+            max_sent_len = word_encode_dim
         word_encode = torch.cat((word_encode, word_embed_remain), 0) # (batch*max_doc, max_sent, hidden_size*2)
 
         # unsort
-        sort_idx = torch.LongTensor([[[i]*self.embed_size]*max_sent_len for i in sent_idx.numpy()])
+        sort_idx = torch.LongTensor([[[i]*self.embed_size]*max_sent_len for i in sent_idx.cpu().detach().numpy()])
         unsort_word_encode = word_encode.new(*word_encode.size())
-        unsort_word_encode = unsort_word_encode.scatter_(0, sort_idx, word_encode)
+        unsort_word_encode = unsort_word_encode.scatter_(0, sort_idx.cuda(), word_encode)
 
         # word attention
         sent_vector, sent_alpha = self.word_att(unsort_word_encode) # (batch*max_doc, hidden_size*2)
