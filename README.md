@@ -1,6 +1,6 @@
 # Hierarchical Attention Networks
 
-Pytorch implementation of [Hierarchical Attention Networks for Document Classification].(https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
+Pytorch implementation of [Hierarchical Attention Networks for Document Classification](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
 
 <img src="https://github.com/SSinyu/Hierarchical-Attention-Network/blob/master/img/HAN_model.png" height="400">
 
