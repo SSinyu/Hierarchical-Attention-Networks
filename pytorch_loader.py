@@ -1,3 +1,4 @@
+import os
 import pickle
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -38,7 +39,6 @@ class text_dataloader(Dataset):
     def __getitem__(self, idx):
         text = self.x[idx]
         label = self.y[idx] - 1
-        word_list = list(self.word_vocab.keys())
 
         batch_x = np.zeros([self.max_doc, self.max_sent])
         sent_length = []
@@ -47,19 +47,11 @@ class text_dataloader(Dataset):
             text = text[-self.max_doc:]
 
         for si, sent in enumerate(text):
-            word_v = batch_x[si]
-            word_lst = sent.split(' ')
-            if len(word_lst) > self.max_sent:
-                word_lst = word_lst[-self.max_sent:]
-            sent_length.append(len(word_lst))
-
-            for wi, word in enumerate(word_lst):
-                if word in self.word_list:
-                    word_v[wi] = self.word_vocab[word]
-                else:
-                    word_v[wi] = 0 # UNK token
-            batch_x[si] = word_v
-
+            if len(sent) > self.max_sent:
+                sent = sent[-self.max_sent:]
+            batch_[si][:len(sent)] = sent
+            sent_length.append(len(sent))
+        
         sent_length = sent_length + [0]*(self.max_doc - len(sent_length))
         doc_length = [len(text)]
 
