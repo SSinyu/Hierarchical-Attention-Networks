@@ -1,6 +1,6 @@
 # Hierarchical Attention Networks
 
-Pytorch/Tensorflow implementation of [Hierarchical Attention Networks for Document Classification](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
+Pytorch/Tensorflow implementation of [Hierarchical Attention Networks for Document Classification](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf).  
 Model has a hierarchical structure that mirrors the hierarchical structure of documents, and consist of word-level encoder/attention layer, sentence-level encoder/attention layer.
 
 <img src="https://github.com/SSinyu/Hierarchical-Attention-Network/blob/master/img/HAN_model.png" height="400">
