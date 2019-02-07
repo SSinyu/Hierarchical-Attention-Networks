@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from collections import OrderedDict
-from networks import HierarchicalAttentionNet
+from pytorch_networks import HierarchicalAttentionNet
 
 
 class Solver(object):
