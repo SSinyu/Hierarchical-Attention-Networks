@@ -3,6 +3,7 @@ import re
 import pickle
 import argparse
 import pandas as pd
+from tqdm import tqdm
 from collections import defaultdict
 from nltk import word_tokenize, sent_tokenize
 
@@ -40,6 +41,7 @@ def prep_text(args):
     # word count, build hierarchical documents
     texts_hierarchy = []
     word_count = defaultdict(int)
+    print('text cleaning...')
     for sents in texts:
         clean_sent = []
         for s in sents:
@@ -57,13 +59,23 @@ def prep_text(args):
         if f > args.min_word_count:
             word_vocab[w] = i
             i += 1
+    
+    # text encoding
+    print('text encoding...')
+    encode_text = []
+    for sent in tqdm(texts_hierarchy):
+        encode_doc = []
+        for s in sent:
+            encode_ = [word_vocab.get(word, 0) for word in word_tokenize(s)]
+            encode_doc.append(encode_)
+        encode_text.append(encode_doc)
 
     # train/eval/test split
     train_ind = int(len(labels) * args.train_ratio)
     eval_ind = int(len(labels) * args.eval_ratio)
-    train_x, train_y = texts_hierarchy[:train_ind], labels[:train_ind]
-    eval_x, eval_y = texts_hierarchy[train_ind:train_ind+eval_ind], labels[train_ind:train_ind+eval_ind]
-    test_x, test_y = texts_hierarchy[train_ind+eval_ind:], labels[train_ind+eval_ind:]
+    train_x, train_y = encode_text[:train_ind], labels[:train_ind]
+    eval_x, eval_y = encode_text[train_ind:train_ind+eval_ind], labels[train_ind:train_ind+eval_ind]
+    test_x, test_y = encode_text[train_ind+eval_ind:], labels[train_ind+eval_ind:]
 
     train_data = {'x':train_x, 'y':train_y}
     eval_data = {'x':eval_x, 'y':eval_y}
