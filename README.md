@@ -23,11 +23,11 @@ class|text|
 ## Use
 
 ```
-python prep.py  # for text preprocessing 
+python pytorch_prep.py  # for text preprocessing 
 
-python main.py  # for training
+python pytorch_main.py  # for training
 
-python main.py --mode='test' --test_iters=*** # for model test
+python pytorch_main.py --mode='test' --test_iters=*** # for model test
 ```
 
 ## Result
