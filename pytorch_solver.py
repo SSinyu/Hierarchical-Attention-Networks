@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from collections import OrderedDict
+from torch.nn.utils import clip_grad_norm_
 from pytorch_networks import HierarchicalAttentionNet
 
 
@@ -31,6 +32,7 @@ class Solver(object):
         self.lr = args.lr
         self.beta1 = args.beta1
         self.beta2 = args.beta2
+        self.clip = args.clip
 
         self.batch_size = args.batch_size
         self.vocab_size = (train_loader.dataset.vocab_size if train_loader else test_loader.dataset.vocab_size)
@@ -92,6 +94,9 @@ class Solver(object):
                 loss = self.criterion(out, y.view(-1))
                 self.HAN.zero_grad()
                 self.optimizer.zero_grad()
+                
+                # gradeint clipping
+                clip_grad_norm_(self.HAN.parameters(), self.clip)
                 loss.backward()
                 self.optimizer.step()
                 train_losses.append(loss.item())
