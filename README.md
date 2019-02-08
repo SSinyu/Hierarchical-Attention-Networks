@@ -7,7 +7,7 @@ Model has a hierarchical structure that mirrors the hierarchical structure of do
 
 ## Requirements
 
-- Pytorch of Tensorflow, nltk, NumPy, pandas, matplotlib
+- Pytorch or Tensorflow, nltk, NumPy, pandas, matplotlib
 
 ## Data
 
