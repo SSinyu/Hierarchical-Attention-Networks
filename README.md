@@ -23,7 +23,7 @@ class|text|
 
 ## Use
 
-1. Download sample_text.zip an unzip
+1. Download sample_text.zip and unzip
 2. run `python prep.py` for text preprocessing
 3. run `python pytorch_main.py` or `python tf_main.py` for traning (check argument)
 4. run `python pytorch_main.py --mode='test' --test_iters=***`  
