@@ -65,6 +65,8 @@ if __name__ == "__main__":
     parser.add_argument('--decay_iters', type=int, default=5000)
     parser.add_argument('--save_iters', type=int, default=1000)
     parser.add_argument('--test_iters', type=int, default=1000)
+    
+    parser.add_argument('--clip', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--beta1', type=float, default=.5)
     parser.add_argument('--beta2', type=float, default=.999)
