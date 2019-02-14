@@ -7,6 +7,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from nltk import word_tokenize, sent_tokenize
 
+import nltk
+nltk.download('punkt')
 
 def clean_str(string):
     # by https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
