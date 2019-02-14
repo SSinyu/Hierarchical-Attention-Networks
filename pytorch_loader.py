@@ -49,7 +49,7 @@ class text_dataloader(Dataset):
         for si, sent in enumerate(text):
             if len(sent) > self.max_sent:
                 sent = sent[-self.max_sent:]
-            batch_[si][:len(sent)] = sent
+            batch_x[si][:len(sent)] = sent
             sent_length.append(len(sent))
         
         sent_length = sent_length + [0]*(self.max_doc - len(sent_length))
