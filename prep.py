@@ -44,7 +44,7 @@ def prep_text(args):
     texts_hierarchy = []
     word_count = defaultdict(int)
     print('text cleaning...')
-    for sents in texts:
+    for sents in tqdm(texts):
         clean_sent = []
         for s in sents:
             cleaning = clean_str(s)
